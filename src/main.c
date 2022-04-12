@@ -243,7 +243,6 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     for (int j = 1; j < SIZE_X - 1; j++)
     {
         int i = j + SIZE_X * (SIZE_Y - 1);
-
         int dir[3] = {4, 7, 8};
         int dir_fs[3] = {2, 6, 5};
         border_bc(N, i, dir, dir_fs, 3, offset_N);
@@ -252,7 +251,6 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     for (int j = 1; j < SIZE_Y - 1; j++)
     {
         int i = 0 + SIZE_X * j;
-
         int dir[3] = {1, 5, 8};
         int dir_fs[3] = {3, 6, 7};
         border_bc(N, i, dir, dir_fs, 3, offset_N);
@@ -261,7 +259,6 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     for (int j = 1; j < SIZE_Y - 1; j++)
     {
         int i = SIZE_X - 1 + SIZE_X * j;
-
         int dir[3] = {3, 7, 6};
         int dir_fs[3] = {1, 8, 5};
         border_bc(N, i, dir, dir_fs, 3, offset_N);
