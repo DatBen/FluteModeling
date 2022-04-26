@@ -142,10 +142,10 @@ void stream(int offset_N[LATTICE_Q])
     {
         /**** Attention ****/
         // offset_N[q] = (offset_N[q] + lattice_c[q][0] + lattice_c[q][1] * SIZE_X) % NUMEL;
-        // Deux erreurs dans la ligne ci-dessus:
-        // 1. le signe: décaler toutes les valeurs dans un sens (positif par exemple) revent à décaler le zéro (offset) dans l'autre sens (négatif).
-        // 2. % n'est pas l'opérateur modulo et se comporte différemment pour les valeurs négatives, or que l'on ajoute ou soustraie l'offset, c peut avoir des composantes négatives ou positives, il faut donc gérer correctement les cas négatifs.
-        // Les 5 lignes ci-dessous sont un peu plus longues mais sont justes :
+        //  Deux erreurs dans la ligne ci-dessus:
+        //  1. le signe: décaler toutes les valeurs dans un sens (positif par exemple) revent à décaler le zéro (offset) dans l'autre sens (négatif).
+        //  2. % n'est pas l'opérateur modulo et se comporte différemment pour les valeurs négatives, or que l'on ajoute ou soustraie l'offset, c peut avoir des composantes négatives ou positives, il faut donc gérer correctement les cas négatifs.
+        //  Les 5 lignes ci-dessous sont un peu plus longues mais sont justes :
         offset_N[q] = (offset_N[q] - lattice_c[q][0] - lattice_c[q][1] * SIZE_X);
         if (offset_N[q] >= NUMEL)
             offset_N[q] -= NUMEL;
@@ -222,6 +222,8 @@ void border_bc(float N[LATTICE_Q * NUMEL], int index, int dir[], int dir_fs[], i
         rho += N[IDX(q, index, offset_N)];
     }
 
+    //----------------------------------------------------------------------------
+
     // Ajout d'un terme source pour imposer rho = 1.0f
     for (int q = 0; q < n_dir; q++)
     {
@@ -243,6 +245,7 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     for (int j = 1; j < SIZE_X - 1; j++)
     {
         int i = j + SIZE_X * (SIZE_Y - 1);
+
         int dir[3] = {4, 7, 8};
         int dir_fs[3] = {2, 6, 5};
         border_bc(N, i, dir, dir_fs, 3, offset_N);
@@ -251,6 +254,7 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     for (int j = 1; j < SIZE_Y - 1; j++)
     {
         int i = 0 + SIZE_X * j;
+
         int dir[3] = {1, 5, 8};
         int dir_fs[3] = {3, 6, 7};
         border_bc(N, i, dir, dir_fs, 3, offset_N);
@@ -259,6 +263,7 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     for (int j = 1; j < SIZE_Y - 1; j++)
     {
         int i = SIZE_X - 1 + SIZE_X * j;
+
         int dir[3] = {3, 7, 6};
         int dir_fs[3] = {1, 8, 5};
         border_bc(N, i, dir, dir_fs, 3, offset_N);
@@ -288,9 +293,24 @@ void borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
     border_bc(N, i, dir, dir_fs, 1, offset_N);
 }
 
+// void new_borders(float N[LATTICE_Q * NUMEL], int offset_N[LATTICE_Q])
+// {
+// 	for (int index = 0; index < SIZE_X; ++index)
+// 	{
+//
+// 	}
+// }
+
 float min(float a, float b)
 {
-    return (a < b ? a : b);
+    if (a < b)
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
 }
 
 int main()
@@ -298,32 +318,48 @@ int main()
 
     float rho = 1.0f;
     float u = 0.0f, v = 0.0f;
-    float N[LATTICE_Q * NUMEL];
     int offset_N[LATTICE_Q];
-    float rho_1[NUMEL];
-    float u_1[NUMEL];
-    float v_1[NUMEL];
+    int period = 26;
 
-    float viscosite = 3.5E-5f;
-    int periode = 26;
-    float delta_t = 0.000000875f;
+    // float N[LATTICE_Q * NUMEL];
+    // float rho_1[NUMEL];
+    // float u_1[NUMEL];
+    // float v_1[NUMEL];
 
-    float tau = viscosite * lattice_inv_cs2 + 0.5f;
+    float *N;
+    float *rho_1;
+    float *u_1;
+    float *v_1;
+
+    N = (float *)malloc(NUMEL * LATTICE_Q * sizeof(float));
+    rho_1 = (float *)malloc(NUMEL * sizeof(float));
+    u_1 = (float *)malloc(NUMEL * sizeof(float));
+    v_1 = (float *)malloc(NUMEL * sizeof(float));
+
+    float tau = 3.5e-5f * lattice_inv_cs2 + 0.5f;
     printf("rho: %f, u: %f, v: %f, tau: %f\n", rho, u, v, tau);
     init(N, rho, u, v, offset_N);
 
-    for (int t = 0; t < 4000; ++t)
+    // for (int q = 0; q < LATTICE_Q; ++q) {
+    // 	N[IDX(q, (SIZE_Y / 2) * SIZE_X + SIZE_X / 2, offset_N)] *= 1.1f;
+    // 	N[IDX(q, (SIZE_Y / 2 + 1) * SIZE_X + SIZE_X / 2, offset_N)] *= 1.1f;
+    // 	N[IDX(q, (SIZE_Y / 2) * SIZE_X + SIZE_X / 2 + 1, offset_N)] *= 1.1f;
+    // 	N[IDX(q, (SIZE_Y / 2 + 1) * SIZE_X + SIZE_X / 2 + 1, offset_N)] *= 1.1f;
+    // }
+
+    for (int t = 0; t < 10000; ++t)
     {
-        rho = 1.0f + min(1.0f, t * 1.0e-2f) * (0.001f);
+        rho = 1.0f + min(t * 1.e-2f, 1.0f) * 0.0001f;
         collide(N, tau, offset_N);
         stream(offset_N);
         walls(wall, nb_wall, N, offset_N);
         blows(blow, nb_blow, N, offset_N, rho);
         borders(N, offset_N);
-        if (t % periode == 0) // prise en compte de Fe
+
+        if (t % period == 0)
         {
             calc_flow_properties_from_boltzmann(N, rho_1, u_1, v_1, offset_N);
-            save(rho_1, u_1, v_1, t, SIZE_X, SIZE_Y);
+            save(rho_1, u_1, v_1, t / period, SIZE_X, SIZE_Y);
         }
     }
 
@@ -332,7 +368,14 @@ int main()
     {
         printf("%f, ", N[IDX(q, index, offset_N)]);
     }
+
     printf("\n");
     printf("%d", wall[0]);
+
+    free(N);
+    free(rho_1);
+    free(u_1);
+    free(v_1);
+
     return 0;
 }
