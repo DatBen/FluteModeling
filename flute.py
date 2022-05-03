@@ -1,9 +1,9 @@
 import imageio
 
-image = imageio.read("flute.png")
+image = imageio.read("test.png")
 data = image.get_data(0)
 
-f = open("flute.h","w")
+f = open("include/flute.h","w")
 taille = data.shape
 f.write("#define SIZE_X %s\n" % taille[1] )
 f.write("#define SIZE_Y %s\n" % taille[0])

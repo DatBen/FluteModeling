@@ -347,7 +347,7 @@ int main()
     // 	N[IDX(q, (SIZE_Y / 2 + 1) * SIZE_X + SIZE_X / 2 + 1, offset_N)] *= 1.1f;
     // }
 
-    for (int t = 0; t < 10000; ++t)
+    for (int t = 0; t < 100000; ++t)
     {
         rho = 1.0f + min(t * 1.e-2f, 1.0f) * 0.0001f;
         collide(N, tau, offset_N);
