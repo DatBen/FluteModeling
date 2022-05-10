@@ -12,7 +12,7 @@
 
 #define LATTICE_D 2
 #define LATTICE_Q 9
-#define NB_KERNEL 3
+#define NB_KERNEL 4
 
 int IDX(int q, int index, int offset_N[LATTICE_Q]) {
     // return q * NUMEL + i;				// Sans propagation
@@ -193,13 +193,13 @@ void walls(int wall[], int nb_wall, cl_float N[LATTICE_Q * NUMEL],
         }
     }
 }
-// void cwalls() {
-//     size_t global[] = {NUMEL};
-//     size_t local[] = {1};
-//     cl_int err = clEnqueueNDRangeKernel(pqueue, kernels[3], 1, NULL, global,
-//                                         local, 0, NULL, NULL);
-//     if (err) exit(38);
-// }
+void cwalls() {
+    size_t global[] = {NUMEL};
+    size_t local[] = {1};
+    cl_int err = clEnqueueNDRangeKernel(pqueue, kernels[3], 1, NULL, global,
+                                        local, 0, NULL, NULL);
+    if (err) exit(38);
+}
 
 void blows(int blow[], int nb_blow, cl_float N[LATTICE_Q * NUMEL],
            int offset_N[LATTICE_Q], cl_float p) {
@@ -416,8 +416,8 @@ int main() {
     clSetKernelArg(kernels[1], 0, sizeof(cl_mem), &clN);
     clSetKernelArg(kernels[1], 1, sizeof(cl_mem), &cloffset_N);
     clSetKernelArg(kernels[2], 0, sizeof(cl_mem), &cloffset_N);
-    // clSetKernelArg(kernels[3], 0, sizeof(cl_mem), &clN);
-    // clSetKernelArg(kernels[3], 1, sizeof(cl_mem), &cloffset_N);
+    clSetKernelArg(kernels[3], 0, sizeof(cl_mem), &clN);
+    clSetKernelArg(kernels[3], 1, sizeof(cl_mem), &cloffset_N);
 
     cl_float tau = 3.5e-5f * lattice_inv_cs2 + 0.5f;
     printf("rho: %f, u: %f, v: %f, tau: %f\n", rho, u, v, tau);
@@ -444,13 +444,13 @@ int main() {
 
         ccollide();
         cstream();
-        // cwalls();
+        cwalls();
         err = clEnqueueReadBuffer(pqueue, clN, CL_TRUE, 0,
                                   NUMEL * LATTICE_Q * sizeof(cl_float), N, 0,
                                   NULL, NULL);
         print_lines(3, 10, N, offset_N);
         // stream(offset_N);
-        walls(wall, nb_wall, N, offset_N);
+        // walls(wall, nb_wall, N, offset_N);
         blows(blow, nb_blow, N, offset_N, rho);
         borders(N, offset_N);
 

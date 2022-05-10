@@ -16,6 +16,7 @@ __constant int lattice_c[LATTICE_Q][LATTICE_D] = {{0, 0},  {1, 0},   {0, 1},
 __constant float lattice_w[LATTICE_Q] = {
     4.0f / 9.0f,  1.0f / 9.0f,  1.0f / 9.0f,  1.0f / 9.0f, 1.0f / 9.0f,
     1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f, 1.0f / 36.0f};
+__constant int lattice_bounceback[LATTICE_Q] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
 
 __constant float lattice_inv_cs2 = 3.0f;
 __constant float tau = 3.5e-5f * 3.0f + 0.5f;
@@ -87,18 +88,16 @@ __kernel void stream(global int *offset_N) {
   }
 }
 
-// __kernel void walls(global float *N, global int *offset_N) {
-//   for (int i = 0; i < nb_wall; ++i) {
-//     int index = wall[i];
+__kernel void walls(global float *N, global int *offset_N) {
+  int index0 = get_global_id(0);
+  int index = wall[index0];
+  for (int q = 0; q < LATTICE_Q; ++q) {
+    int q_bb = lattice_bounceback[q];
+    int index_orig =
+        (index - (lattice_c[q][0] + lattice_c[q][1] * SIZE_X)) % NUMEL;
 
-//     for (int q = 0; q < LATTICE_Q; ++q) {
-//       int q_bb = lattice_bounceback[q];
-//       int index_orig =
-//           (index - (lattice_c[q][0] + lattice_c[q][1] * SIZE_X)) % NUMEL;
-
-//       cl_float temp = N[IDX(q_bb, index_orig, offset_N)];
-//       N[IDX(q_bb, index_orig, offset_N)] = N[IDX(q, index, offset_N)];
-//       N[IDX(q, index, offset_N)] = temp;
-//     }
-//   }
-// }
+    float temp = N[IDX(q_bb, index_orig, offset_N)];
+    N[IDX(q_bb, index_orig, offset_N)] = N[IDX(q, index, offset_N)];
+    N[IDX(q, index, offset_N)] = temp;
+  }
+}
