@@ -1,6 +1,6 @@
 import imageio
 
-image = imageio.read("test.png")
+image = imageio.read("test2.png")
 data = image.get_data(0)
 
 f = open("include/flute.h","w")

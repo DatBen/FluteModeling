@@ -6,8 +6,8 @@ X_offset=5
 
 img = Image.new('RGB', (width, height), color = 'white')
 
-w_bouche=15
-h_bouche=35  
+w_bouche=6
+h_bouche=18  
 
 
 w_bec=20
@@ -19,8 +19,8 @@ h_res=15
 h_sortie=5
 w_sortie=h_sortie
 
-trou_bizot=6
-offset_bizot=h_bec//2
+trou_bizot=8
+offset_bizot=h_bec//2-1
 w_bizot=4
 
 def create_bouche():
@@ -56,8 +56,8 @@ def create_res():
     offset=X_offset+w_bouche+w_bec+2
     for i in range(w_res):
         img.putpixel((offset+trou_bizot+i,height//2-offset_bizot),(0,0,0))
-    for i in range(h_res-h_bec//2-2+offset_bizot):
-        img.putpixel((offset,height//2+h_bec-1+i),(0,0,0))
+    for i in range(height//2+h_bec//2+1,height//2+h_bec//2+h_res):
+        img.putpixel((offset,i),(0,0,0))
     for i in range(0,w_res+trou_bizot):
         img.putpixel((offset+i,height//2+h_res+offset_bizot),(0,0,0))
     for i in range(w_sortie):
@@ -76,14 +76,9 @@ def create_bizot():
 
 
 
-
-
-
-
-
 create_bouche()
 create_bec()
 create_res()
 create_bizot()
 
-img.save('test.png')
+img.save('test2.png')

@@ -356,10 +356,10 @@ int main()
         blows(blow, nb_blow, N, offset_N, rho);
         borders(N, offset_N);
 
-        if (t % period == 0)
+        if (t % (2 * period) == 0)
         {
             calc_flow_properties_from_boltzmann(N, rho_1, u_1, v_1, offset_N);
-            save(rho_1, u_1, v_1, t / period, SIZE_X, SIZE_Y);
+            save(rho_1, u_1, v_1, t / (2 * period), SIZE_X, SIZE_Y);
         }
     }
 
