@@ -1,11 +1,68 @@
 #include "../include/utils.h"
 
-void write_to_vtk(char *filename, float *rho, float *u, float *v, unsigned int nx, unsigned int ny)
+int build_context(cl_platform_id *pplatforms, cl_device_id *pdevice,
+                  cl_context *pcontext, cl_command_queue *pqueue)
+{
+    cl_int err;
+    err = clGetPlatformIDs(1, pplatforms, NULL);
+    if (err)
+        return err;
+    err = clGetDeviceIDs(*pplatforms, CL_DEVICE_TYPE_GPU, 1, pdevice, NULL);
+    if (err)
+        return err;
+    *pcontext = clCreateContext(NULL, 1, pdevice, NULL, NULL, &err);
+    if (err)
+        return err;
+    *pqueue = clCreateCommandQueueWithProperties(*pcontext, *pdevice, 0, &err);
+    return err;
+}
+
+int build_kernels(char *filename, int nb_kernels, cl_kernel *kernels,
+                  char **kernel_names, cl_context context,
+                  cl_device_id *pdevice)
+{
+    cl_int err;
+    // lecture du fichier dans un buffer
+    FILE *cl_file;
+    cl_file = fopen("flute.cl", "r");
+    // fopen_s( & cl_file, "flute.cl", "r");
+    if (!cl_file)
+    {
+        return 1;
+    }
+    char *cl_buffer = (char *)malloc(10000);
+    size_t nb_char = fread(cl_buffer, 1, 10000, cl_file);
+    // construction du prg
+    cl_program prg;
+    prg = clCreateProgramWithSource(context, 1, (const char **)&cl_buffer,
+                                    &nb_char, &err);
+    if (err)
+        exit(101);
+    // compilation
+    const char *options = "-cl-opt-disable";
+    err = clBuildProgram(prg, 1, pdevice, options, NULL, NULL);
+    if (err)
+    {
+        printf("%d\n", err);
+        exit(102);
+    }
+    free(cl_buffer);
+    for (int i = 0; i < nb_kernels; ++i)
+    {
+        kernels[i] = clCreateKernel(prg, kernel_names[i], &err);
+        // printf(">>%p\n", kernels[i]);
+        if (err)
+            return err;
+    }
+    return err;
+}
+void write_to_vtk(char *filename, float *rho, float *u, float *v,
+                  unsigned int nx, unsigned int ny)
 {
     int vtkscalarlength;
     int vtkoffset;
     float realbuffer[IO_BUF_LEN + MAX_DIM];
-    int32_t intbuffer;
+    int intbuffer;
     FILE *fid;
 
     unsigned int ibuf, i, j;
@@ -16,23 +73,33 @@ void write_to_vtk(char *filename, float *rho, float *u, float *v, unsigned int n
 
     vtkscalarlength = nx * ny * sizeof(*realbuffer);
     vtkoffset = 0;
-    fprintf(fid, "<?xml version=\"1.0\"?>\n<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
-                 "  <ImageData WholeExtent=\"%d %d %d %d %d %d\" GhostLevel=\"1\" Origin=\"0. 0. 0.\" Spacing=\"1 1 1\">\n"
-                 "    <Piece Extent=\"%d %d %d %d %d %d\">\n"
-                 "      <PointData>\n",
+    fprintf(fid,
+            "<?xml version=\"1.0\"?>\n<VTKFile type=\"ImageData\" "
+            "version=\"0.1\" byte_order=\"LittleEndian\">\n"
+            "  <ImageData WholeExtent=\"%d %d %d %d %d %d\" GhostLevel=\"1\" "
+            "Origin=\"0. 0. 0.\" Spacing=\"1 1 1\">\n"
+            "    <Piece Extent=\"%d %d %d %d %d %d\">\n"
+            "      <PointData>\n",
             1, nx, 1, ny, 1, 1, 1, nx, 1, ny, 1, 1);
 
-    fprintf(fid, "        <DataArray type=\"Float32\" Name=\"density\"  NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n", vtkoffset);
+    fprintf(fid,
+            "        <DataArray type=\"Float32\" Name=\"density\"  "
+            "NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",
+            vtkoffset);
     vtkoffset = vtkoffset + (1 * vtkscalarlength + sizeof(intbuffer));
-    fprintf(fid, "        <DataArray type=\"Float32\" Name=\"velocity\" NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\"/>\n", vtkoffset);
+    fprintf(fid,
+            "        <DataArray type=\"Float32\" Name=\"velocity\" "
+            "NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\"/>\n",
+            vtkoffset);
     vtkoffset = vtkoffset + (3 * vtkscalarlength + sizeof(intbuffer));
 
-    fprintf(fid, "      </PointData>\n"
-                 "      <CellData>\n"
-                 "      </CellData>\n"
-                 "    </Piece>\n"
-                 "  </ImageData>\n"
-                 "  <AppendedData encoding=\"raw\">\n\n_");
+    fprintf(fid,
+            "      </PointData>\n"
+            "      <CellData>\n"
+            "      </CellData>\n"
+            "    </Piece>\n"
+            "  </ImageData>\n"
+            "  <AppendedData encoding=\"raw\">\n\n_");
     ibuf = 0;
 
     // Output density
@@ -85,12 +152,14 @@ void write_to_vtk(char *filename, float *rho, float *u, float *v, unsigned int n
         ibuf = 0;
     }
 
-    fprintf(fid, "\n  </AppendedData>\n"
-                 "</VTKFile>\n");
+    fprintf(fid,
+            "\n  </AppendedData>\n"
+            "</VTKFile>\n");
     fclose(fid);
 }
 
-void save(float *rho, float *u, float *v, int i, unsigned int size_x, unsigned int size_y)
+void save(float *rho, float *u, float *v, int i, unsigned int size_x,
+          unsigned int size_y)
 {
     char *filename;
     int filename_length = 24;
