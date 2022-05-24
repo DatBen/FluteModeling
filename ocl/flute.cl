@@ -140,8 +140,8 @@ void border_bc(global float *N, int index, int idir, int idir_fs, int n_dir,
   int dir_l[] = {0, 0, 0};
   int dir_fs_l[] = {0, 0, 0};
   for (int i = 0; i < 3; i++) {
-    dir_l[i] = dir[idir][i];
-    dir_fs_l[i] = dir_fs[idir_fs][i];
+    dir_l[i] = dirs[idir][i];
+    dir_fs_l[i] = dirs[idir_fs][i];
   }
 
   for (int q = 0; q < n_dir; q++) {
