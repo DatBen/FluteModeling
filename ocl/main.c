@@ -12,7 +12,7 @@
 
 #define LATTICE_D 2
 #define LATTICE_Q 9
-#define NB_KERNEL 4
+#define NB_KERNEL 6
 
 int IDX(int q, int index, int offset_N[LATTICE_Q]) {
     // return q * NUMEL + i;				// Sans propagation
@@ -225,6 +225,18 @@ void blows(int blow[], int nb_blow, cl_float N[LATTICE_Q * NUMEL],
     }
 }
 
+void cblows(cl_float p) {
+    size_t global[] = {NUMEL};
+    size_t local[] = {1};
+    cl_int err = clSetKernelArg(kernels[4], 2, sizeof(cl_float), &p);
+    err = clEnqueueNDRangeKernel(pqueue, kernels[4], 1, NULL, global, local, 0,
+                                 NULL, NULL);
+    if (err) {
+        printf("%d\n", err);
+        exit(39);
+    }
+}
+
 void border_bc(cl_float N[LATTICE_Q * NUMEL], int index, int dir[],
                int dir_fs[], int n_dir, int offset_N[LATTICE_Q]) {
     // dir: directions entrantes. Pour la condition limite considérées,
@@ -361,6 +373,17 @@ void new_borders(cl_float *N, int *offset_N) {
     }
 }
 
+void cborders() {
+    size_t global[] = {SIZE_X + SIZE_Y - 2};
+    size_t local[] = {1};
+    cl_int err = clEnqueueNDRangeKernel(pqueue, kernels[5], 1, NULL, global,
+                                        local, 0, NULL, NULL);
+    if (err) {
+        printf("%d\n", err);
+        exit(40);
+    }
+}
+
 cl_float min(cl_float a, cl_float b) { return a < b ? a : b; }
 
 void print_lines(int i, int k, cl_float *N, int *offsetN) {
@@ -382,10 +405,14 @@ int main() {
         printf("could not build context (%d)", err);
         return 1;
     }
-    char *kernel_names[] = {"init", "collide_local", "stream", "walls"};
+    char *kernel_names[] = {"init",  "collide_local", "stream",
+                            "walls", "blows",         "borders"};
     err = build_kernels("flute.cl", NB_KERNEL, kernels, kernel_names, pcontext,
                         &pdevice);
-    if (err) return 35;
+    if (err) {
+        printf("could not build kernels (%d)", err);
+        return 35;
+    }
     cl_float rho = 1.0f;
     cl_float u = 0.0f, v = 0.0f;
     int offset_N[LATTICE_Q];
@@ -418,6 +445,10 @@ int main() {
     clSetKernelArg(kernels[2], 0, sizeof(cl_mem), &cloffset_N);
     clSetKernelArg(kernels[3], 0, sizeof(cl_mem), &clN);
     clSetKernelArg(kernels[3], 1, sizeof(cl_mem), &cloffset_N);
+    clSetKernelArg(kernels[4], 0, sizeof(cl_mem), &clN);
+    clSetKernelArg(kernels[4], 1, sizeof(cl_mem), &cloffset_N);
+    clSetKernelArg(kernels[5], 0, sizeof(cl_mem), &clN);
+    clSetKernelArg(kernels[5], 1, sizeof(cl_mem), &cloffset_N);
 
     cl_float tau = 3.5e-5f * lattice_inv_cs2 + 0.5f;
     printf("rho: %f, u: %f, v: %f, tau: %f\n", rho, u, v, tau);
@@ -443,16 +474,19 @@ int main() {
                                    NULL, NULL);
 
         ccollide();
+
         cstream();
         cwalls();
+        cblows(rho);
+        cborders();
         err = clEnqueueReadBuffer(pqueue, clN, CL_TRUE, 0,
                                   NUMEL * LATTICE_Q * sizeof(cl_float), N, 0,
                                   NULL, NULL);
         print_lines(3, 10, N, offset_N);
-        // stream(offset_N);
-        // walls(wall, nb_wall, N, offset_N);
-        blows(blow, nb_blow, N, offset_N, rho);
-        borders(N, offset_N);
+        //  stream(offset_N);
+        //  walls(wall, nb_wall, N, offset_N);
+        //  blows(blow, nb_blow, N, offset_N, rho);
+        // borders(N, offset_N);
 
         if (t % period == 0) {
             calc_flow_properties_from_boltzmann(N, rho_1, u_1, v_1, offset_N);
