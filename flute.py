@@ -37,8 +37,7 @@ g.write(", ".join([str(x) for x in noirs]))
 g.write("};\n")  
 g.write("__constant int nb_blow = %s;\n" % len(rouges))
 g.write("__constant int blow[]={%s};\n" % ",".join([str(x) for x in rouges]))
-g.write("__constant int dir[3] = {1,5,8}\n")
-g.write("__constant int dir_fs[3] = {3,6,7}\n")
+
 
 g.write("\n\n");
 g.close()
