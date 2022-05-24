@@ -469,7 +469,7 @@ int main() {
                                NUMEL * LATTICE_Q * sizeof(cl_float), N, 0, NULL,
                                NULL);
 
-    for (int t = 0; t < 10; ++t) {
+    for (int t = 0; t < 260; ++t) {
         rho = 1.0f + min(t * 1.e-2f, 1.0f) * 0.0001f;
         // collide(N, tau, offset_N);
         // err = clEnqueueWriteBuffer(pqueue, clN, CL_TRUE, 0,
