@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -469,9 +470,12 @@ int main() {
                                NUMEL * LATTICE_Q * sizeof(cl_float), N, 0, NULL,
                                NULL);
 
-    for (int t = 0; t < 10; ++t) {
+    for (int t = 0; t < 260; ++t) {
         rho = 1.0f + min(t * 1.e-2f, 1.0f) * 0.0001f;
         // collide(N, tau, offset_N);
+        // err = clEnqueueWriteBuffer(pqueue, clN, CL_TRUE, 0,
+        //                            NUMEL * LATTICE_Q * sizeof(cl_float), N,
+        //                            0, NULL, NULL);
 
         ccollide();
 
@@ -479,11 +483,14 @@ int main() {
         cwalls();
         cblows(rho);
         cborders();
-
-        //  stream(offset_N);
-        //  walls(wall, nb_wall, N, offset_N);
-        //  blows(blow, nb_blow, N, offset_N, rho);
-        // borders(N, offset_N);
+        // err = clEnqueueReadBuffer(pqueue, clN, CL_TRUE, 0,
+        //                           NUMEL * LATTICE_Q * sizeof(cl_float), N, 0,
+        //                           NULL, NULL);
+        // print_lines(3, 10, N, offset_N);
+        //   stream(offset_N);
+        //   walls(wall, nb_wall, N, offset_N);
+        //   blows(blow, nb_blow, N, offset_N, rho);
+        //  borders(N, offset_N);
 
         if (t % period == 0) {
             err = clEnqueueReadBuffer(pqueue, clN, CL_TRUE, 0,
