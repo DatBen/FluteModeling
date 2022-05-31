@@ -14,13 +14,13 @@ w_bec=20
 h_bec=h_bouche-2*w_bouche
 
 w_res=50
-h_res=15
+h_res=12
 
 h_sortie=5
 w_sortie=h_sortie
 
-trou_bizot=8
-offset_bizot=h_bec//2-1
+trou_bizot=12
+offset_bizot=h_bec//2-2
 w_bizot=4
 
 def create_bouche():

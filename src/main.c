@@ -336,7 +336,9 @@ int main()
     u_1 = (float *)malloc(NUMEL * sizeof(float));
     v_1 = (float *)malloc(NUMEL * sizeof(float));
 
-    float tau = 3.5e-5f * lattice_inv_cs2 + 0.5f;
+    int multi = 5;
+
+    float tau = 2.5e-5f * lattice_inv_cs2 + 0.5f;
     printf("rho: %f, u: %f, v: %f, tau: %f\n", rho, u, v, tau);
     init(N, rho, u, v, offset_N);
 
@@ -347,7 +349,9 @@ int main()
     // 	N[IDX(q, (SIZE_Y / 2 + 1) * SIZE_X + SIZE_X / 2 + 1, offset_N)] *= 1.1f;
     // }
 
-    for (int t = 0; t < 100000; ++t)
+    int nb_pas = 1000000;
+
+    for (int t = 0; t < nb_pas; ++t)
     {
         rho = 1.0f + min(t * 1.e-2f, 1.0f) * 0.0001f;
         collide(N, tau, offset_N);
@@ -355,11 +359,15 @@ int main()
         walls(wall, nb_wall, N, offset_N);
         blows(blow, nb_blow, N, offset_N, rho);
         borders(N, offset_N);
+        if ((t % 100) == 0 && (t < (nb_pas / 10)))
+        {
+            printf("%d\n", t);
+        }
 
-        if (t % (2 * period) == 0)
+        if ((t % (period * multi) == 0) && (t > 100000))
         {
             calc_flow_properties_from_boltzmann(N, rho_1, u_1, v_1, offset_N);
-            save(rho_1, u_1, v_1, t / (2 * period), SIZE_X, SIZE_Y);
+            save(rho_1, u_1, v_1, t / (period * multi), SIZE_X, SIZE_Y);
         }
     }
 
